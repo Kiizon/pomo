@@ -21,6 +21,9 @@ export default function HomePage() {
           </div>
         </div>
 
+        <div className="mt-8">
+          <PomodoroHeatmap />
+        </div>
       </div>
     </div>
   );
