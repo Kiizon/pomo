@@ -80,7 +80,7 @@ export function PomodoroTimer() {
   }, [isActive, timeLeft, calculateProgress])
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg h-[400px]">
       <CardHeader>
         <CardTitle className="text-center">Pomodoro Timer</CardTitle>
       </CardHeader>
@@ -119,11 +119,7 @@ export function PomodoroTimer() {
           {isActive ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
           {isActive ? "Pause" : "Start"}
         </Button>
-        {activeTab === "pomodoro" && (
-          <Button variant="outline" size="icon" onClick={completePomodoro}>
-            <Check className="h-4 w-4" />
-          </Button>
-        )}
+
       </CardFooter>
     </Card>
   )
