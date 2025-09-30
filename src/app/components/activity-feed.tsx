@@ -85,7 +85,7 @@ export function ActivityFeed() {
             <div className="text-center text-gray-500 dark:text-gray-400 py-8">Loading sessions...</div>
           ) : sessions.length === 0 ? (
             <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-              No sessions yet. Complete a Pomodoro to get started!
+              Complete a pomodoro to get started!
             </div>
           ) : (
             sessions.map((session) => (
