@@ -20,19 +20,20 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pomodoro Dashboard</h1>
-              <p className="text-gray-600 dark:text-gray-400">Track your productivity with the Pomodoro technique</p>
+      <div className="flex flex-col items-center px-4 py-8">
+        <div className="w-fit mb-8">
+          <header className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pomodoro Dashboard</h1>
+                <p className="text-gray-600 dark:text-gray-400">Track your productivity with the Pomodoro technique</p>
+              </div>
+              <AuthHeader />
             </div>
-            <AuthHeader />
-          </div>
-        </header>
+          </header>
 
-        {!user ? (
-          <Card className="max-w-md mx-auto">
+          {!user ? (
+            <Card className="max-w-md mx-auto">
             <CardContent className="pt-6 text-center">
               <LogIn className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <h2 className="text-xl font-semibold mb-2">Sign in to get started</h2>
@@ -41,9 +42,8 @@ export default function HomePage() {
               </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="flex flex-col items-center gap-6">
-            <div className="w-fit">
+          ) : (
+            <>
               <div className="flex gap-6 mb-6">
                 <div className="w-80">
                   <PomodoroTimer />
@@ -54,9 +54,9 @@ export default function HomePage() {
               </div>
 
               <PomodoroHeatmap />
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
