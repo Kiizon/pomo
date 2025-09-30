@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { getUser, onAuthChange } from '@/lib/auth';
+import { User, getUser, onAuthChange } from '@/lib/auth';
 
 type AuthContextType = {
   user: User | null;
@@ -25,9 +24,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
 
-    // Listen for auth changes
+    // Listen for auth changes (OAuth callback)
     const { data: { subscription } } = onAuthChange((_event, session) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => {

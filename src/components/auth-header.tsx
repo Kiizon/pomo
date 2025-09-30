@@ -50,11 +50,11 @@ export function AuthHeader() {
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
         <Avatar className="h-8 w-8">
-          <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.name || 'User'} />
-          <AvatarFallback>{user.user_metadata?.name?.[0] || user.email?.[0] || 'U'}</AvatarFallback>
+          <AvatarImage src={user.picture} alt={user.name || 'User'} />
+          <AvatarFallback>{user.name?.[0] || user.email?.[0] || 'U'}</AvatarFallback>
         </Avatar>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {user.user_metadata?.name || user.email}
+          {user.name || user.email}
         </span>
       </div>
       <Button onClick={handleSignOut} variant="outline" size="sm">
