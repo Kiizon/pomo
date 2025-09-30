@@ -163,7 +163,7 @@ export function PomodoroHeatmap() {
   const monthLabels = useMemo(() => computeMonthLabels(columns), [columns])
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg w-fit">
       <CardContent className="pt-6">
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
@@ -171,36 +171,36 @@ export function PomodoroHeatmap() {
           </h2>
         </div>
 
-        <div className="overflow-auto">
-          <div className="flex flex-col gap-1 min-w-[900px]">
-            <div className="flex text-xs text-gray-500 mb-1">
-              <div className="w-8" />
-              <div className="flex-1 flex gap-1">
+        <div>
+          <div className="inline-flex flex-col gap-0.5">
+            <div className="flex text-[10px] text-gray-500 mb-0.5">
+              <div className="w-6" />
+              <div className="flex gap-0.5">
                 {monthLabels.map((label, i) => (
-                  <div key={i} className="flex flex-col items-center" style={{ width: 12 }}>
+                  <div key={i} className="flex flex-col items-center" style={{ width: 10 }}>
                     <span className="min-w-0 text-center">{label}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex gap-1">
-              <div className="flex flex-col gap-1 justify-around text-xs text-gray-500 pr-2">
-                <span>Mon</span>
-                <span>Wed</span>
-                <span>Fri</span>
+            <div className="flex gap-0.5">
+              <div className="flex flex-col gap-0.5 justify-around text-[9px] text-gray-500 pr-1 w-5">
+                <span>M</span>
+                <span>W</span>
+                <span>F</span>
               </div>
 
-              <div className="flex gap-1">
+              <div className="flex gap-0.5">
                 <TooltipProvider delayDuration={150}>
                   {columns.map((col, cIdx) => (
-                    <div key={cIdx} className="flex flex-col gap-1">
+                    <div key={cIdx} className="flex flex-col gap-0.5">
                       {col.map((day, rIdx) =>
                         day ? (
                           <Tooltip key={rIdx}>
                             <TooltipTrigger asChild>
                               <div
-                                className={`w-3 h-3 rounded-sm ${getColorClass(day.count)}`}
+                                className={`w-2.5 h-2.5 rounded-[2px] ${getColorClass(day.count)}`}
                                 aria-label={`${day.count} pomodoros on ${formatDate(day.date)}`}
                                 role="img"
                               />
@@ -212,7 +212,7 @@ export function PomodoroHeatmap() {
                             </TooltipContent>
                           </Tooltip>
                         ) : (
-                          <div key={rIdx} className="w-3 h-3 rounded-sm bg-transparent" />
+                          <div key={rIdx} className="w-2.5 h-2.5 rounded-[2px] bg-transparent" />
                         ),
                       )}
                     </div>
