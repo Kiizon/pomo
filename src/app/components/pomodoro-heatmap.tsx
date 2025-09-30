@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { apiClient } from "@/lib/api-client"
@@ -51,7 +51,7 @@ export function PomodoroHeatmap() {
   };
 
 
-  const groupPomodorosByDay = (timestamps: string[]): PomodoroDay[] => {
+  const groupPomodorosByDay = useCallback((timestamps: string[]): PomodoroDay[] => {
     const days: Record<string, number> = {}
     const today = new Date()
 
@@ -78,7 +78,7 @@ export function PomodoroHeatmap() {
     return Object.entries(days)
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date))
-  }
+  }, [])
 
 
   const buildColumns = (data: PomodoroDay[]) => {
@@ -110,12 +110,12 @@ export function PomodoroHeatmap() {
   useEffect(() => {
     const loadHeatmapData = async () => {
       try {
-        const heatmapData = await apiClient.getHeatmapData(365)
+        const heatmapData = await apiClient.getHeatmapData(365) as Array<{date: string; count: number; total_minutes: number}>
         
         // heatmapData is array of {date, count, total_minutes}
         // Create map for quick lookup
         const dataMap: Record<string, number> = {}
-        heatmapData.forEach((item: any) => {
+        heatmapData.forEach((item) => {
           dataMap[item.date] = item.count
         })
         
@@ -136,7 +136,7 @@ export function PomodoroHeatmap() {
         
         setPomodoroData(grouped)
         setMaxCount(Math.max(...grouped.map((d) => d.count), 1))
-        setTotalPomodoros(heatmapData.reduce((sum: number, item: any) => sum + item.count, 0))
+        setTotalPomodoros(heatmapData.reduce((sum, item) => sum + item.count, 0))
       } catch (error) {
         console.error('Failed to load heatmap data:', error)
         // Fallback to empty data
@@ -150,14 +150,14 @@ export function PomodoroHeatmap() {
     loadHeatmapData()
     
     // Listen for new sessions
-    const unsubscribe = sessionUpdated.on(() => {
+    const unsubscribe = sessionUpdated.subscribe(() => {
       loadHeatmapData()
     })
 
     return () => {
       unsubscribe()
     }
-  }, [])
+  }, [groupPomodorosByDay])
 
   const columns = useMemo(() => buildColumns(pomodoroData), [pomodoroData])
   const monthLabels = useMemo(() => computeMonthLabels(columns), [columns])
