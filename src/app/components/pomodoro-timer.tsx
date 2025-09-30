@@ -1,14 +1,22 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Play, Pause, RotateCcw, Zap} from "lucide-react"
+import { Play, Pause, RotateCcw, Zap, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { logWorkSession } from "@/lib/sessions"
 import { sessionUpdated } from "@/lib/events"
+
+const DEFAULT_DURATIONS = {
+  pomodoro: 25,
+  shortBreak: 5,
+  longBreak: 15,
+}
 
 export function PomodoroTimer() {
   const [activeTab, setActiveTab] = useState("pomodoro")
@@ -16,11 +24,27 @@ export function PomodoroTimer() {
   const [timeLeft, setTimeLeft] = useState(25 * 60)
   const [progress, setProgress] = useState(100)
   const [sessionStartTime, setSessionStartTime] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  
+  // Custom durations in minutes
+  const [customDurations, setCustomDurations] = useState(DEFAULT_DURATIONS)
+
+  // Load custom durations from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('pomo_durations')
+    if (saved) {
+      try {
+        setCustomDurations(JSON.parse(saved))
+      } catch (e) {
+        console.error('Failed to load durations:', e)
+      }
+    }
+  }, [])
 
   const durations = {
-    pomodoro: 25 * 60,
-    shortBreak: 5 * 60,
-    longBreak: 15 * 60,
+    pomodoro: customDurations.pomodoro * 60,
+    shortBreak: customDurations.shortBreak * 60,
+    longBreak: customDurations.longBreak * 60,
   }
 
   const formatTime = (seconds: number) => {
@@ -92,6 +116,13 @@ export function PomodoroTimer() {
     }
   }
 
+  const saveSettings = () => {
+    localStorage.setItem('pomo_durations', JSON.stringify(customDurations))
+    resetTimer()
+    setSettingsOpen(false)
+    toast.success("Timer settings saved!")
+  }
+
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
 
@@ -113,7 +144,54 @@ export function PomodoroTimer() {
   return (
     <Card className="shadow-lg h-[400px]">
       <CardHeader>
-        <CardTitle className="text-center">Pomodoro Timer</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>Pomodoro Timer</CardTitle>
+          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Timer Settings</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Pomodoro (minutes)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={customDurations.pomodoro}
+                    onChange={(e) => setCustomDurations({...customDurations, pomodoro: parseInt(e.target.value) || 25})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Short Break (minutes)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={customDurations.shortBreak}
+                    onChange={(e) => setCustomDurations({...customDurations, shortBreak: parseInt(e.target.value) || 5})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Long Break (minutes)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={customDurations.longBreak}
+                    onChange={(e) => setCustomDurations({...customDurations, longBreak: parseInt(e.target.value) || 15})}
+                  />
+                </div>
+                <Button onClick={saveSettings} className="w-full">Save Settings</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

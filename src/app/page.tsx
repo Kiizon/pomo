@@ -19,7 +19,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen min-w-[1100px] bg-gray-50 dark:bg-gray-900">
       <div className="flex flex-col items-center px-4 py-8">
         <div className="w-fit mb-8">
           <header className="mb-8">
