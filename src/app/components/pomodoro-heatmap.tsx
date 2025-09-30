@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { apiClient } from "@/lib/api-client"
+import { sessionUpdated } from "@/lib/events"
 
 type PomodoroDay = {
   date: string
@@ -106,19 +108,55 @@ export function PomodoroHeatmap() {
   }
 
   useEffect(() => {
-    const pomodoros = [
-        "2024-09-03", 
-        "2024-09-04", 
-        "2024-09-05",
-        "2024-09-06", 
-        "2024-09-07", 
-        "2024-09-08", 
-        "2024-09-09"
-    ]
-    const grouped = groupPomodorosByDay(pomodoros)
-    setPomodoroData(grouped)
-    setMaxCount(Math.max(...grouped.map((d) => d.count), 1))
-    setTotalPomodoros(pomodoros.length)
+    const loadHeatmapData = async () => {
+      try {
+        const heatmapData = await apiClient.getHeatmapData(365)
+        
+        // heatmapData is array of {date, count, total_minutes}
+        // Create map for quick lookup
+        const dataMap: Record<string, number> = {}
+        heatmapData.forEach((item: any) => {
+          dataMap[item.date] = item.count
+        })
+        
+        // Build full 365 days with counts
+        const days: Record<string, number> = {}
+        const today = new Date()
+        
+        for (let i = 0; i < 365; i++) {
+          const d = new Date(today)
+          d.setDate(d.getDate() - i)
+          const key = toLocalYYYYMMDD(d)
+          days[key] = dataMap[key] || 0
+        }
+        
+        const grouped = Object.entries(days)
+          .map(([date, count]) => ({ date, count }))
+          .sort((a, b) => a.date.localeCompare(b.date))
+        
+        setPomodoroData(grouped)
+        setMaxCount(Math.max(...grouped.map((d) => d.count), 1))
+        setTotalPomodoros(heatmapData.reduce((sum: number, item: any) => sum + item.count, 0))
+      } catch (error) {
+        console.error('Failed to load heatmap data:', error)
+        // Fallback to empty data
+        const grouped = groupPomodorosByDay([])
+        setPomodoroData(grouped)
+        setMaxCount(1)
+        setTotalPomodoros(0)
+      }
+    }
+
+    loadHeatmapData()
+    
+    // Listen for new sessions
+    const unsubscribe = sessionUpdated.on(() => {
+      loadHeatmapData()
+    })
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   const columns = useMemo(() => buildColumns(pomodoroData), [pomodoroData])
