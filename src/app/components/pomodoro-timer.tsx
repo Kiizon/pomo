@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Play, Pause, RotateCcw} from "lucide-react"
+import { Play, Pause, RotateCcw, Zap} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -75,6 +75,23 @@ export function PomodoroTimer() {
     }
   }
 
+  const quickComplete = async () => {
+    if (activeTab === "pomodoro") {
+      const startTime = sessionStartTime || new Date().toISOString()
+      try {
+        await logWorkSession(startTime, 25)
+        sessionUpdated.emit()
+        toast.success("Quick test session logged!")
+        resetTimer()
+      } catch (error) {
+        console.error('Failed to log test session:', error)
+        toast.error("Failed to log test session")
+      }
+    } else {
+      toast.info("Switch to Pomodoro tab to test")
+    }
+  }
+
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
 
@@ -133,7 +150,15 @@ export function PomodoroTimer() {
           {isActive ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
           {isActive ? "Pause" : "Start"}
         </Button>
-
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={quickComplete}
+          className="bg-yellow-50 hover:bg-yellow-100 border-yellow-300"
+          title="Quick test - instantly log a session"
+        >
+          <Zap className="h-4 w-4 text-yellow-600" />
+        </Button>
       </CardFooter>
     </Card>
   )
