@@ -98,14 +98,27 @@ export function PomodoroHeatmap() {
   }
 
   const computeMonthLabels = (columns: (PomodoroDay | null)[][]) => {
+    let lastMonth = -1
+    let lastYear = -1
+    const currentYear = new Date().getFullYear()
+  
     return columns.map((col) => {
       const top = col.find(Boolean) as PomodoroDay | undefined
       if (!top) return ""
       const d = new Date(top.date + "T12:00:00")
-
-      return d.getDate() <= 7 ? d.toLocaleString("en-US", { month: "short" }) : ""
+      const m = d.getMonth()
+      const y = d.getFullYear()
+  
+      if (m !== lastMonth || y !== lastYear) {
+        lastMonth = m
+        lastYear = y
+        const monthName = d.toLocaleString("en-US", { month: "short" })
+        return y === currentYear ? monthName : `${monthName} ’${String(y).slice(-2)}`
+      }
+      return ""
     })
   }
+  
 
   useEffect(() => {
     const loadHeatmapData = async () => {
