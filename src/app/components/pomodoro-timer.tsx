@@ -81,7 +81,7 @@ export function PomodoroTimer() {
       try {
         await logWorkSession(startTime, 25)
         sessionUpdated.emit()
-        toast.success("Quick test session logged!")
+        toast.success("Pomo completed!")
         resetTimer()
       } catch (error) {
         console.error('Failed to log test session:', error)
