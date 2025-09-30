@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { signInWithGoogle, signOut } from "@/lib/auth";
 import { useAuth } from "@/components/auth-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { toast } from "sonner";
 
 export function AuthHeader() {
@@ -39,15 +40,19 @@ export function AuthHeader() {
 
   if (!user) {
     return (
-      <Button onClick={handleSignIn} variant="default">
-        <LogIn className="mr-2 h-4 w-4" />
-        Sign in with Google
-      </Button>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <Button onClick={handleSignIn} variant="default">
+          <LogIn className="mr-2 h-4 w-4" />
+          Sign in with Google
+        </Button>
+      </div>
     );
   }
 
   return (
     <div className="flex items-center gap-3">
+      <ThemeToggle />
       <div className="flex items-center gap-2">
         <Avatar className="h-8 w-8">
           <AvatarImage src={user.picture} alt={user.name || 'User'} />
