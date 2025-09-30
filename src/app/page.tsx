@@ -42,20 +42,20 @@ export default function HomePage() {
             </CardContent>
           </Card>
         ) : (
-          <>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              <div className="lg:col-span-1">
-                <PomodoroTimer />
+          <div className="flex flex-col items-center gap-6">
+            <div className="w-fit">
+              <div className="flex gap-6 mb-6">
+                <div className="w-80">
+                  <PomodoroTimer />
+                </div>
+                <div className="flex-1">
+                  <ActivityFeed />
+                </div>
               </div>
-              <div className="md:col-span-2">
-                <ActivityFeed />
-              </div>
-            </div>
 
-            <div className="mt-8">
               <PomodoroHeatmap />
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
