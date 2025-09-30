@@ -7,7 +7,7 @@ export type User = {
   picture?: string;
 };
 
-export async function signInWithGoogle(redirectPath: string = '/') {
+export async function signInWithGoogle() {
   // Redirect to FastAPI Google OAuth endpoint
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   window.location.href = `${apiUrl}/auth/google`;
@@ -25,7 +25,6 @@ export async function getUser(): Promise<User | null> {
   
   try {
     // Decode JWT to get user info (basic client-side check)
-    const payload = JSON.parse(atob(token.split('.')[1]));
     const userInfo = localStorage.getItem('user_info');
     if (userInfo) {
       return JSON.parse(userInfo);

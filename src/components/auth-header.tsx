@@ -12,7 +12,7 @@ export function AuthHeader() {
 
   const handleSignIn = async () => {
     try {
-      await signInWithGoogle('/');
+      await signInWithGoogle();
     } catch (error) {
       toast.error('Failed to sign in. Please try again.');
       console.error('Sign in error:', error);
