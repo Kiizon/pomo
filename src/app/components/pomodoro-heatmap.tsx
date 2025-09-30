@@ -180,7 +180,7 @@ export function PomodoroHeatmap() {
       <CardContent className="pt-6">
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            {totalPomodoros} pomodoros in the last year
+            {totalPomodoros} pomodos in the last year
           </h2>
         </div>
 
