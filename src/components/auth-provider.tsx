@@ -18,21 +18,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check current session
+    // First check if there's a token in the URL (OAuth callback)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasTokenInUrl = urlParams.has('token');
+
+    if (hasTokenInUrl) {
+      // Let onAuthChange handle it
+      const { data: { subscription } } = onAuthChange((_event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
+
+      return () => subscription.unsubscribe();
+    }
+
+    // Check current session from localStorage
     getUser()
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
 
-    // Listen for auth changes (OAuth callback)
-    const { data: { subscription } } = onAuthChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    return undefined;
   }, []);
 
   return (

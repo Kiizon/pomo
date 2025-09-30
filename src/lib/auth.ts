@@ -43,10 +43,13 @@ export function onAuthChange(cb: (event: string, session: { user: User } | null)
     const token = urlParams.get('token');
     
     if (token) {
+      console.log('Found token in URL, processing...');
       apiClient.setToken(token);
       // Decode and store user info
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Decoded JWT payload:', payload);
+        
         const user: User = {
           id: payload.sub,
           email: payload.email || '',
@@ -54,14 +57,18 @@ export function onAuthChange(cb: (event: string, session: { user: User } | null)
           picture: payload.picture
         };
         localStorage.setItem('user_info', JSON.stringify(user));
+        console.log('Stored user info:', user);
         
-        // Clean URL
-        window.history.replaceState({}, '', window.location.pathname);
-        
-        // Trigger callback
+        // Trigger callback BEFORE cleaning URL
         cb('SIGNED_IN', { user });
+        
+        // Clean URL after a small delay to ensure state updates
+        setTimeout(() => {
+          window.history.replaceState({}, '', window.location.pathname);
+        }, 100);
       } catch (e) {
         console.error('Failed to decode token:', e);
+        cb('SIGNED_OUT', null);
       }
     }
   }

@@ -49,8 +49,13 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
     # Get or create user in our database
     user = get_or_create_user(db, google_user)
     
-    # Create JWT token
-    access_token = create_access_token({"sub": str(user.id)})
+    # Create JWT token with user info
+    access_token = create_access_token({
+        "sub": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "picture": user.picture
+    })
     
     # Redirect to frontend with token
     return RedirectResponse(
@@ -62,5 +67,10 @@ async def verify_token(google_token: str, db: Session = Depends(get_db)):
     """Verify Google token and return JWT + user info"""
     google_user = await verify_google_token(google_token)
     user = get_or_create_user(db, google_user)
-    access_token = create_access_token({"sub": str(user.id)})
+    access_token = create_access_token({
+        "sub": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "picture": user.picture
+    })
     return schemas.Token(access_token=access_token, user=user)
