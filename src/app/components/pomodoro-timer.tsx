@@ -1,18 +1,21 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Play, Pause, RotateCcw, Check } from "lucide-react"
+import { Play, Pause, RotateCcw} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
+import { logWorkSession } from "@/lib/sessions"
+import { sessionUpdated } from "@/lib/events"
 
 export function PomodoroTimer() {
   const [activeTab, setActiveTab] = useState("pomodoro")
   const [isActive, setIsActive] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(25 * 60) // 25 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(25 * 60)
   const [progress, setProgress] = useState(100)
+  const [sessionStartTime, setSessionStartTime] = useState<string | null>(null)
 
   const durations = {
     pomodoro: 25 * 60,
@@ -35,6 +38,7 @@ export function PomodoroTimer() {
     setIsActive(false)
     setTimeLeft(durations[activeTab as keyof typeof durations])
     setProgress(100)
+    setSessionStartTime(null)
   }, [activeTab, durations])
 
   const handleTabChange = (value: string) => {
@@ -45,16 +49,26 @@ export function PomodoroTimer() {
   }
 
   const toggleTimer = () => {
+    if (!isActive && activeTab === "pomodoro") {
+      // Starting a new pomodoro session
+      setSessionStartTime(new Date().toISOString())
+    }
     setIsActive(!isActive)
   }
 
-  const completePomodoro = () => {
+  const completePomodoro = async () => {
     if (activeTab === "pomodoro") {
-      toast("Pomodoro completed! Great job! Take a break now.")
-    }
-
-    // Auto switch to break after pomodoro
-    if (activeTab === "pomodoro") {
+      // Log the session
+      if (sessionStartTime) {
+        try {
+          await logWorkSession(sessionStartTime, 25)
+          sessionUpdated.emit() // Notify listeners to refresh
+          toast.success("Pomodoro completed! Great job! Take a break now.")
+        } catch (error) {
+          console.error('Failed to log session:', error)
+          toast.error("Session completed but failed to save. Please check your connection.")
+        }
+      }
       handleTabChange("shortBreak")
     } else {
       resetTimer()
