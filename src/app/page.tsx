@@ -2,6 +2,7 @@
 import { PomodoroTimer } from "./components/pomodoro-timer";
 import { ActivityFeed } from "./components/activity-feed"
 import { PomodoroHeatmap } from "./components/pomodoro-heatmap"
+import { FriendList } from "./components/friend-list"
 import { AuthHeader } from "@/components/auth-header";
 import { useAuth } from "@/components/auth-provider";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,16 +44,23 @@ export default function HomePage() {
           </Card>
           ) : (
             <>
-              <div className="flex gap-6 mb-6">
-                <div className="w-80">
-                  <PomodoroTimer />
+              <div className="flex gap-6 mb-6 items-stretch">
+                <div className="flex flex-col gap-6 flex-1">
+                  <div className="flex gap-6">
+                    <div className="w-80">
+                      <PomodoroTimer />
+                    </div>
+                    <div className="flex-1">
+                      <ActivityFeed />
+                    </div>
+                  </div>
+                  <PomodoroHeatmap />
                 </div>
-                <div className="flex-1">
-                  <ActivityFeed />
+                <div className="w-64 flex">
+                  <FriendList />
                 </div>
               </div>
 
-              <PomodoroHeatmap />
             </>
           )}
         </div>
