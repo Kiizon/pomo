@@ -59,8 +59,8 @@ export function FriendList() {
   }, [])
 
   return (
-    <Card className="shadow-lg h-fit">
-      <CardHeader className="pb-3">
+    <Card className="shadow-lg h-full flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -71,7 +71,7 @@ export function FriendList() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 ">
         {friends.length === 0 ? (
           <div className="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
             No friends yet
