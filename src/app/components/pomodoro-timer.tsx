@@ -112,7 +112,7 @@ export function PomodoroTimer() {
         toast.error("Failed to log test session")
       }
     } else {
-      toast.info("Switch to Pomodoro tab to test")
+      toast.info("Why would you want to fast complete a break? You should be taking a break! You deserve it!")
     }
   }
 
