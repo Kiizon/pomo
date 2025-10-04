@@ -69,7 +69,7 @@ async def get_heatmap_data(
     """Get daily session counts for heatmap"""
     from datetime import timedelta
     
-    start_date = datetime.now() - timedelta(days=days)
+    start_date = datetime.utcnow() - timedelta(days=days)
     
     sessions = db.query(
         func.date(models.Session.started_at).label('date'),
