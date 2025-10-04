@@ -84,6 +84,44 @@ export class ApiClient {
   async getHeatmapData(days = 90) {
     return this.request(`/sessions/stats/heatmap?days=${days}`);
   }
+
+  // Friends
+  async getFriends() {
+    return this.request('/friends/');
+  }
+
+  async sendFriendRequest(receiverEmail: string) {
+    return this.request('/friends/request', {
+      method: 'POST',
+      body: JSON.stringify({ receiver_email: receiverEmail }),
+    });
+  }
+
+  async getIncomingRequests() {
+    return this.request('/friends/requests/incoming');
+  }
+
+  async acceptFriendRequest(requestId: string) {
+    return this.request(`/friends/request/${requestId}/accept`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectFriendRequest(requestId: string) {
+    return this.request(`/friends/request/${requestId}/reject`, {
+      method: 'POST',
+    });
+  }
+
+  async searchUsers(email: string) {
+    return this.request(`/friends/search?email=${encodeURIComponent(email)}`);
+  }
+
+  async unfriend(friendId: string) {
+    return this.request(`/friends/${friendId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

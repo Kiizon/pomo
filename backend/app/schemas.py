@@ -41,3 +41,27 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: User
+
+# Friend schemas
+class FriendRequestCreate(BaseModel):
+    receiver_email: str
+
+class FriendRequestResponse(BaseModel):
+    id: UUID
+    sender: User
+    receiver: User
+    status: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class FriendResponse(BaseModel):
+    id: UUID
+    name: str | None
+    email: str
+    picture: str | None
+    pomodoros_today: int = 0
+    
+    class Config:
+        from_attributes = True

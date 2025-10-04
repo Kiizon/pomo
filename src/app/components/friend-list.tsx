@@ -1,95 +1,166 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Users, UserPlus, Search, Check, X } from "lucide-react"
+import { Users, UserPlus, Search, Check, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { apiClient } from "@/lib/api-client"
+import { useAuth } from "@/components/auth-provider"
+import { toast } from "sonner"
 
 interface Friend {
   id: string
-  name: string
+  name: string | null
   email: string
-  picture: string
+  picture: string | null
   pomodoros_today: number
-  is_active: boolean
 }
 
 interface FriendRequest {
   id: string
-  name: string
+  sender: {
+    id: string
+    name: string | null
+    email: string
+    picture: string | null
+  }
+  status: string
+  created_at: string
+}
+
+interface SearchResult {
+  id: string
+  name: string | null
   email: string
-  picture: string
-  sent_at: string
+  picture: string | null
 }
 
 export function FriendList() {
+  const { user } = useAuth()
   const [friends, setFriends] = useState<Friend[]>([])
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [addFriendOpen, setAddFriendOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
 
-  // Mock data for now - will connect to API later
-  useEffect(() => {
-    const mockFriends: Friend[] = [
-      {
-        id: "1",
-        name: "Alice Chen",
-        email: "alice@example.com",
-        picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alice",
-        pomodoros_today: 8,
-        is_active: true
-      },
-      {
-        id: "2", 
-        name: "Bob Smith",
-        email: "bob@example.com",
-        picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bob",
-        pomodoros_today: 5,
-        is_active: false
-      },
-      {
-        id: "3",
-        name: "Carol Lee",
-        email: "carol@example.com", 
-        picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carol",
-        pomodoros_today: 12,
-        is_active: true
-      },
-      {
-        id: "4",
-        name: "David Park",
-        email: "david@example.com",
-        picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
-        pomodoros_today: 3,
-        is_active: false
-      }
-    ]
-    
-    const mockRequests: FriendRequest[] = [
-      {
-        id: "r1",
-        name: "Emma Wilson",
-        email: "emma@example.com",
-        picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
-        sent_at: "2 hours ago"
-      },
-      {
-        id: "r2", 
-        name: "John Doe",
-        email: "john@example.com",
-        picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-        sent_at: "1 day ago"
-      }
-    ]
-    
-    setFriends(mockFriends)
-    setFriendRequests(mockRequests)
-    console.log('Friend requests loaded:', mockRequests.length)
+  const loadFriends = useCallback(async () => {
+    try {
+      const data = await apiClient.getFriends()
+      setFriends(data)
+    } catch (error) {
+      console.error('Failed to load friends:', error)
+    }
   }, [])
+
+  const loadFriendRequests = useCallback(async () => {
+    try {
+      const data = await apiClient.getIncomingRequests()
+      setFriendRequests(data)
+    } catch (error) {
+      console.error('Failed to load friend requests:', error)
+    }
+  }, [])
+
+  const searchUsers = useCallback(async () => {
+    setSearchLoading(true)
+    try {
+      const data = await apiClient.searchUsers(searchQuery)
+      setSearchResults(data)
+    } catch (error) {
+      console.error('Failed to search users:', error)
+      toast.error('Failed to search users')
+    } finally {
+      setSearchLoading(false)
+    }
+  }, [searchQuery])
+
+  // Load friends and requests
+  useEffect(() => {
+    if (user) {
+      loadFriends()
+      loadFriendRequests()
+    }
+  }, [user, loadFriends, loadFriendRequests])
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length >= 3) {
+        searchUsers()
+      } else {
+        setSearchResults([])
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, searchUsers])
+
+  async function handleSendRequest(email: string) {
+    setLoading(true)
+    try {
+      await apiClient.sendFriendRequest(email)
+      toast.success('Friend request sent!')
+      setSearchQuery('')
+      setSearchResults([])
+    } catch (error) {
+      console.error('Failed to send friend request:', error)
+      toast.error('Failed to send friend request')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleAccept(requestId: string) {
+    setLoading(true)
+    try {
+      await apiClient.acceptFriendRequest(requestId)
+      toast.success('Friend request accepted!')
+      await loadFriends()
+      await loadFriendRequests()
+    } catch (error) {
+      console.error('Failed to accept friend request:', error)
+      toast.error('Failed to accept request')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleReject(requestId: string) {
+    setLoading(true)
+    try {
+      await apiClient.rejectFriendRequest(requestId)
+      toast.success('Friend request rejected')
+      await loadFriendRequests()
+    } catch (error) {
+      console.error('Failed to reject friend request:', error)
+      toast.error('Failed to reject request')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function formatTimeAgo(dateString: string) {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <Card className="shadow-lg h-full flex flex-col">
@@ -114,12 +185,53 @@ export function FriendList() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search by email or name..."
+                    placeholder="Search by email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
                   />
+                  {searchLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                  )}
                 </div>
+
+                {/* Search Results */}
+                {searchResults.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Search Results
+                    </h3>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {searchResults.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.picture || undefined} alt={user.name || user.email} />
+                            <AvatarFallback>{(user.name || user.email)[0].toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              {user.name || 'No name'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {user.email}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSendRequest(user.email)}
+                            disabled={loading}
+                            className="h-8"
+                          >
+                            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Add'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Incoming Friend Requests */}
                 {friendRequests.length > 0 && (
@@ -134,26 +246,38 @@ export function FriendList() {
                           className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 dark:border-gray-700"
                         >
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={request.picture} alt={request.name} />
-                            <AvatarFallback>{request.name[0]}</AvatarFallback>
+                            <AvatarImage src={request.sender.picture || undefined} alt={request.sender.name || request.sender.email} />
+                            <AvatarFallback>{(request.sender.name || request.sender.email)[0].toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                              {request.name}
+                              {request.sender.name || 'No name'}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              {request.email}
+                              {request.sender.email}
                             </p>
                             <p className="text-xs text-gray-400 dark:text-gray-500">
-                              {request.sent_at}
+                              {formatTimeAgo(request.created_at)}
                             </p>
                           </div>
                           <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950">
-                              <Check className="h-4 w-4" />
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                              onClick={() => handleAccept(request.id)}
+                              disabled={loading}
+                            >
+                              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950">
-                              <X className="h-4 w-4" />
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                              onClick={() => handleReject(request.id)}
+                              disabled={loading}
+                            >
+                              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                             </Button>
                           </div>
                         </div>
@@ -162,10 +286,19 @@ export function FriendList() {
                   </div>
                 )}
 
-                {/* Empty state when no requests */}
-                {friendRequests.length === 0 && (
+                {/* Empty state when no requests and no search */}
+                {friendRequests.length === 0 && searchResults.length === 0 && searchQuery.length < 3 && (
                   <div className="text-center py-6 text-sm text-gray-500 dark:text-gray-400">
-                    No pending friend requests
+                    {searchQuery.length > 0 && searchQuery.length < 3
+                      ? 'Type at least 3 characters to search'
+                      : 'No pending friend requests'}
+                  </div>
+                )}
+
+                {/* No search results */}
+                {searchQuery.length >= 3 && searchResults.length === 0 && !searchLoading && (
+                  <div className="text-center py-6 text-sm text-gray-500 dark:text-gray-400">
+                    No users found
                   </div>
                 )}
               </div>
@@ -176,7 +309,7 @@ export function FriendList() {
       <CardContent className="space-y-3 flex-1 overflow-y-auto">
         {friends.length === 0 ? (
           <div className="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
-            No friends yet
+            No friends yet. Add friends to see their progress!
           </div>
         ) : (
           friends.map((friend) => (
@@ -184,22 +317,17 @@ export function FriendList() {
               key={friend.id}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
-              <div className="relative">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={friend.picture} alt={friend.name} />
-                  <AvatarFallback>{friend.name[0]}</AvatarFallback>
-                </Avatar>
-                {friend.is_active && (
-                  <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-800" />
-                )}
-              </div>
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={friend.picture || undefined} alt={friend.name || friend.email} />
+                <AvatarFallback>{(friend.name || friend.email)[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate text-gray-900 dark:text-white">
-                  {friend.name}
+                  {friend.name || friend.email}
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                    {friend.pomodoros_today} 🍅
+                    {friend.pomodoros_today} 🍅 today
                   </Badge>
                 </div>
               </div>
