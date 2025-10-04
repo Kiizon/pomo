@@ -85,7 +85,12 @@ export function PomodoroTimer() {
       // Log the session
       if (sessionStartTime) {
         try {
-          await logWorkSession(sessionStartTime, 25)
+          // Calculate actual elapsed time
+          const startTime = new Date(sessionStartTime)
+          const endTime = new Date()
+          const elapsedMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000)
+          
+          await logWorkSession(sessionStartTime, elapsedMinutes)
           sessionUpdated.emit() // Notify listeners to refresh
           toast.success("Pomodoro completed! Great job! Take a break now.")
         } catch (error) {
@@ -103,7 +108,12 @@ export function PomodoroTimer() {
     if (activeTab === "pomodoro") {
       const startTime = sessionStartTime || new Date().toISOString()
       try {
-        await logWorkSession(startTime, 25)
+        // Calculate actual elapsed time (or minimum 1 minute if just started)
+        const start = new Date(startTime)
+        const end = new Date()
+        const elapsedMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000))
+        
+        await logWorkSession(startTime, elapsedMinutes)
         sessionUpdated.emit()
         toast.success("Pomo completed!")
         resetTimer()

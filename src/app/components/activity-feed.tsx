@@ -33,7 +33,8 @@ export function ActivityFeed() {
   }
 
   const formatSessionTime = (isoString: string) => {
-    const date = new Date(isoString)
+    const utcString = isoString.endsWith('Z') ? isoString : `${isoString}Z`
+    const date = new Date(utcString)
     return date.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
       minute: '2-digit',
@@ -42,7 +43,8 @@ export function ActivityFeed() {
   }
 
   const formatSessionDate = (isoString: string) => {
-    const date = new Date(isoString)
+    const utcString = isoString.endsWith('Z') ? isoString : `${isoString}Z`
+    const date = new Date(utcString)
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
