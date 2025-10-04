@@ -108,12 +108,37 @@ export function FriendList() {
       toast.success('Friend request sent!')
       setSearchQuery('')
       setSearchResults([])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send friend request:', error)
-      toast.error('Failed to send friend request')
+      const status = error?.status
+      const errorMessage = error?.message || ''
+      
+      if (status === 404 || errorMessage.toLowerCase().includes('not found')) {
+        toast.error('User does not exist')
+      } else if (status === 400) {
+        // Parse the specific 400 error message
+        if (errorMessage.toLowerCase().includes('already friends')) {
+          toast.error('Already friends with this user')
+        } else if (errorMessage.toLowerCase().includes('yourself')) {
+          toast.error('Cannot send friend request to yourself')
+        } else if (errorMessage.toLowerCase().includes('already exists')) {
+          toast.error('Friend request already sent')
+        } else {
+          toast.error(errorMessage)
+        }
+      } else {
+        toast.error('Failed to send friend request')
+      }
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleSearchEnter() {
+    if (!searchQuery.trim()) return
+    
+    // Try to send request directly with the email
+    await handleSendRequest(searchQuery.trim())
   }
 
   async function handleAccept(requestId: string) {
@@ -185,10 +210,17 @@ export function FriendList() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search by email..."
+                    placeholder="Search by email... (press Enter to send request)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleSearchEnter()
+                      }
+                    }}
                     className="pl-10"
+                    disabled={loading}
                   />
                   {searchLoading && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />

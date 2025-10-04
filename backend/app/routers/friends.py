@@ -13,7 +13,7 @@ router = APIRouter(prefix="/friends", tags=["friends"])
 @router.post("/request", status_code=201)
 async def send_friend_request(
     request_data: schemas.FriendRequestCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Send a friend request to a user by email"""
@@ -26,12 +26,12 @@ async def send_friend_request(
         raise HTTPException(status_code=404, detail="User not found")
     
     # Can't send request to yourself
-    if str(receiver.id) == current_user['sub']:
+    if receiver.id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot send friend request to yourself")
     
     # Check if already friends
     existing_friendship = db.query(models.Friendship).filter(
-        models.Friendship.user_id == UUID(current_user['sub']),
+        models.Friendship.user_id == current_user.id,
         models.Friendship.friend_id == receiver.id
     ).first()
     
@@ -42,12 +42,12 @@ async def send_friend_request(
     existing_request = db.query(models.FriendRequest).filter(
         or_(
             and_(
-                models.FriendRequest.sender_id == UUID(current_user['sub']),
+                models.FriendRequest.sender_id == current_user.id,
                 models.FriendRequest.receiver_id == receiver.id
             ),
             and_(
                 models.FriendRequest.sender_id == receiver.id,
-                models.FriendRequest.receiver_id == UUID(current_user['sub'])
+                models.FriendRequest.receiver_id == current_user.id
             )
         ),
         models.FriendRequest.status == "pending"
@@ -58,7 +58,7 @@ async def send_friend_request(
     
     # Create friend request
     friend_request = models.FriendRequest(
-        sender_id=UUID(current_user['sub']),
+        sender_id=current_user.id,
         receiver_id=receiver.id
     )
     db.add(friend_request)
@@ -68,12 +68,12 @@ async def send_friend_request(
 
 @router.get("/requests/incoming", response_model=List[schemas.FriendRequestResponse])
 async def get_incoming_requests(
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get all incoming friend requests"""
     requests = db.query(models.FriendRequest).filter(
-        models.FriendRequest.receiver_id == UUID(current_user['sub']),
+        models.FriendRequest.receiver_id == current_user.id,
         models.FriendRequest.status == "pending"
     ).all()
     
@@ -94,13 +94,13 @@ async def get_incoming_requests(
 @router.post("/request/{request_id}/accept")
 async def accept_friend_request(
     request_id: UUID,
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Accept a friend request"""
     friend_request = db.query(models.FriendRequest).filter(
         models.FriendRequest.id == request_id,
-        models.FriendRequest.receiver_id == UUID(current_user['sub']),
+        models.FriendRequest.receiver_id == current_user.id,
         models.FriendRequest.status == "pending"
     ).first()
     
@@ -130,13 +130,13 @@ async def accept_friend_request(
 @router.post("/request/{request_id}/reject")
 async def reject_friend_request(
     request_id: UUID,
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Reject a friend request"""
     friend_request = db.query(models.FriendRequest).filter(
         models.FriendRequest.id == request_id,
-        models.FriendRequest.receiver_id == UUID(current_user['sub']),
+        models.FriendRequest.receiver_id == current_user.id,
         models.FriendRequest.status == "pending"
     ).first()
     
@@ -151,7 +151,7 @@ async def reject_friend_request(
 
 @router.get("/", response_model=List[schemas.FriendResponse])
 async def get_friends(
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get all friends with today's Pomodoro count"""
@@ -174,7 +174,7 @@ async def get_friends(
             func.date(models.Session.started_at) == today
         )
     ).filter(
-        models.Friendship.user_id == UUID(current_user['sub'])
+        models.Friendship.user_id == current_user.id
     ).group_by(
         models.User.id, models.User.name, models.User.email, models.User.picture
     ).order_by(
@@ -195,7 +195,7 @@ async def get_friends(
 @router.get("/search")
 async def search_users(
     email: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Search for users by email (partial match)"""
@@ -205,18 +205,18 @@ async def search_users(
     # Find users matching email
     users = db.query(models.User).filter(
         models.User.email.ilike(f"%{email}%"),
-        models.User.id != UUID(current_user['sub'])
+        models.User.id != current_user.id
     ).limit(10).all()
     
     # Filter out already friends
     friend_ids = db.query(models.Friendship.friend_id).filter(
-        models.Friendship.user_id == UUID(current_user['sub'])
+        models.Friendship.user_id == current_user.id
     ).all()
     friend_ids = [str(f[0]) for f in friend_ids]
     
     # Filter out pending requests
     pending_ids = db.query(models.FriendRequest.receiver_id).filter(
-        models.FriendRequest.sender_id == UUID(current_user['sub']),
+        models.FriendRequest.sender_id == current_user.id,
         models.FriendRequest.status == "pending"
     ).all()
     pending_ids = [str(p[0]) for p in pending_ids]
@@ -237,7 +237,7 @@ async def search_users(
 @router.delete("/{friend_id}")
 async def unfriend(
     friend_id: UUID,
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Remove a friend (delete friendship)"""
@@ -245,12 +245,12 @@ async def unfriend(
     db.query(models.Friendship).filter(
         or_(
             and_(
-                models.Friendship.user_id == UUID(current_user['sub']),
+                models.Friendship.user_id == current_user.id,
                 models.Friendship.friend_id == friend_id
             ),
             and_(
                 models.Friendship.user_id == friend_id,
-                models.Friendship.friend_id == UUID(current_user['sub'])
+                models.Friendship.friend_id == current_user.id
             )
         )
     ).delete()
