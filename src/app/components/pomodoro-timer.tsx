@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Play, Pause, RotateCcw, Zap, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,11 +41,11 @@ export function PomodoroTimer() {
     }
   }, [])
 
-  const durations = {
+  const durations = useMemo(() => ({
     pomodoro: customDurations.pomodoro * 60,
     shortBreak: customDurations.shortBreak * 60,
     longBreak: customDurations.longBreak * 60,
-  }
+  }), [customDurations])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -80,7 +80,7 @@ export function PomodoroTimer() {
     setIsActive(!isActive)
   }
 
-  const completePomodoro = async () => {
+  const completePomodoro = useCallback(async () => {
     if (activeTab === "pomodoro") {
       // Log the session
       if (sessionStartTime) {
@@ -102,7 +102,7 @@ export function PomodoroTimer() {
     } else {
       resetTimer()
     }
-  }
+  }, [activeTab, sessionStartTime, resetTimer])
 
   const quickComplete = async () => {
     if (activeTab === "pomodoro") {
@@ -149,7 +149,7 @@ export function PomodoroTimer() {
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isActive, timeLeft, calculateProgress])
+  }, [isActive, timeLeft, calculateProgress, completePomodoro])
 
   return (
     <Card className="shadow-lg h-[400px]">

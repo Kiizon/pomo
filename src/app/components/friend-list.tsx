@@ -108,10 +108,10 @@ export function FriendList() {
       toast.success('Friend request sent!')
       setSearchQuery('')
       setSearchResults([])
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to send friend request:', error)
-      const status = error?.status
-      const errorMessage = error?.message || ''
+      const status = (error as { status?: number })?.status
+      const errorMessage = (error as Error)?.message || ''
       
       if (status === 404 || errorMessage.toLowerCase().includes('not found')) {
         toast.error('User does not exist')

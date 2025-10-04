@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock } from "lucide-react"
@@ -14,7 +14,7 @@ export function ActivityFeed() {
   const [todayTotal, setTodayTotal] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     if (!user) return
     
     try {
@@ -30,7 +30,7 @@ export function ActivityFeed() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   const formatSessionTime = (isoString: string) => {
     const utcString = isoString.endsWith('Z') ? isoString : `${isoString}Z`
@@ -67,7 +67,7 @@ export function ActivityFeed() {
     })
     
     return unsubscribe
-  }, [user])
+  }, [user, loadSessions])
 
   return (
     <Card className="shadow-lg h-[400px]">

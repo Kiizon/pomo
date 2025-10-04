@@ -49,8 +49,8 @@ export class ApiClient {
       } catch {
         // If response is not JSON, use status text
       }
-      const error = new Error(errorMessage);
-      (error as any).status = response.status;
+      const error = new Error(errorMessage) as Error & { status: number };
+      error.status = response.status;
       throw error;
     }
 
