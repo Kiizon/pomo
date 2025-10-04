@@ -45,7 +45,8 @@ async def get_today_total(
     db: Session = Depends(get_db)
 ):
     """Get total minutes for today"""
-    today = date.today()
+    # Use UTC for consistency with stored session times
+    today = datetime.utcnow().date()
     start_of_day = datetime.combine(today, datetime.min.time())
     end_of_day = datetime.combine(today, datetime.max.time())
     

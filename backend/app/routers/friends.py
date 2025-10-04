@@ -155,7 +155,10 @@ async def get_friends(
     db: Session = Depends(get_db)
 ):
     """Get all friends with today's Pomodoro count"""
-    today = date.today()
+    # Use UTC for consistency with stored session times
+    today = datetime.utcnow().date()
+    start_of_day = datetime.combine(today, datetime.min.time())
+    end_of_day = datetime.combine(today, datetime.max.time())
     
     # Query friends with their session counts for today
     friends_data = db.query(
@@ -171,7 +174,8 @@ async def get_friends(
         models.Session,
         and_(
             models.Session.user_id == models.User.id,
-            func.date(models.Session.started_at) == today
+            models.Session.started_at >= start_of_day,
+            models.Session.started_at <= end_of_day
         )
     ).filter(
         models.Friendship.user_id == current_user.id
@@ -257,3 +261,40 @@ async def unfriend(
     db.commit()
     
     return {"message": "Friend removed"}
+
+@router.get("/debug/activity")
+async def debug_friend_activity(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Debug endpoint to check friend activity data"""
+    # Get all friends
+    friends = db.query(models.User).join(
+        models.Friendship,
+        models.Friendship.friend_id == models.User.id
+    ).filter(
+        models.Friendship.user_id == current_user.id
+    ).all()
+    
+    # Use UTC for consistency with stored session times
+    today = datetime.utcnow().date()
+    start_of_day = datetime.combine(today, datetime.min.time())
+    end_of_day = datetime.combine(today, datetime.max.time())
+    
+    result = []
+    for friend in friends:
+        # Get sessions for this friend today
+        sessions = db.query(models.Session).filter(
+            models.Session.user_id == friend.id,
+            models.Session.started_at >= start_of_day,
+            models.Session.started_at <= end_of_day
+        ).all()
+        
+        result.append({
+            "friend_id": str(friend.id),
+            "friend_email": friend.email,
+            "sessions_today": len(sessions),
+            "session_times": [str(s.started_at) for s in sessions]
+        })
+    
+    return result
